@@ -158,7 +158,7 @@ export function RideCard({ ride, onDeleted }: RideCardProps) {
             </Button>
           )}
 
-          <Button variant="outline" size="sm" onClick={() => { setShowRequests(false); setOwnerPhone(""); }} className="text-xs ml-auto">
+          <Button variant="outline" size="sm" onClick={() => setShowRequests(!showRequests)} className="text-xs ml-auto">
             <Users className="w-3.5 h-3.5 mr-1" /> {pendingRequests.length > 0 ? `${pendingRequests.length} pending` : "Manage"}
           </Button>
 
