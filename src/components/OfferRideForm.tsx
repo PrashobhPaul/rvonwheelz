@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Ride, canCreateRide } from "@/lib/types";
-import { addRide } from "@/lib/rides";
 import { DirectionToggle } from "./DirectionToggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,13 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Car, X } from "lucide-react";
 import { toast } from "sonner";
+import { useCreateRide } from "@/hooks/useRides";
 
 interface OfferRideFormProps {
   onClose: () => void;
-  onRideAdded: () => void;
 }
 
-export function OfferRideForm({ onClose, onRideAdded }: OfferRideFormProps) {
+export function OfferRideForm({ onClose }: OfferRideFormProps) {
   const [direction, setDirection] = useState<Ride["direction"]>("to-office");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -22,6 +21,7 @@ export function OfferRideForm({ onClose, onRideAdded }: OfferRideFormProps) {
   const [time, setTime] = useState("08:30");
   const [seats, setSeats] = useState(2);
   const [vehicle, setVehicle] = useState("");
+  const mutation = useCreateRide();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,10 +33,16 @@ export function OfferRideForm({ onClose, onRideAdded }: OfferRideFormProps) {
       toast.error("Cannot create a ride that starts within 30 minutes");
       return;
     }
-    addRide({ name: name.trim(), phone: phone.trim(), direction, date, time, seats, vehicle: vehicle.trim() || "Car" });
-    toast.success("Ride offered successfully!");
-    onRideAdded();
-    onClose();
+    mutation.mutate(
+      { name: name.trim(), phone: phone.trim(), direction, date, time, seats, vehicle: vehicle.trim() || "Car" },
+      {
+        onSuccess: () => {
+          toast.success("Ride offered successfully!");
+          onClose();
+        },
+        onError: () => toast.error("Failed to create ride"),
+      }
+    );
   };
 
   return (
@@ -81,7 +87,9 @@ export function OfferRideForm({ onClose, onRideAdded }: OfferRideFormProps) {
             <Label htmlFor="vehicle">Vehicle (optional)</Label>
             <Input id="vehicle" value={vehicle} onChange={(e) => setVehicle(e.target.value)} placeholder="e.g. Car - Hyundai i20" maxLength={50} />
           </div>
-          <Button type="submit" className="w-full">Offer Ride</Button>
+          <Button type="submit" className="w-full" disabled={mutation.isPending}>
+            {mutation.isPending ? "Creating..." : "Offer Ride"}
+          </Button>
         </form>
       </CardContent>
     </Card>
