@@ -1,20 +1,21 @@
-import { useState, useMemo, useCallback } from "react";
-import { getRides } from "@/lib/rides";
+import { useState, useMemo } from "react";
 import { Ride } from "@/lib/types";
 import { DirectionToggle } from "@/components/DirectionToggle";
 import { OfferRideForm } from "@/components/OfferRideForm";
 import { RideCard } from "@/components/RideCard";
+import { SettingsDialog } from "@/components/SettingsDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Leaf } from "lucide-react";
+import { Plus, Search, Leaf, Settings, Loader2 } from "lucide-react";
+import { useRides } from "@/hooks/useRides";
+import { isGoogleSheetsMode } from "@/lib/config";
 
 export default function Index() {
-  const [rides, setRides] = useState(getRides);
+  const { data: rides = [], isLoading } = useRides();
   const [filterDirection, setFilterDirection] = useState<Ride["direction"]>("to-office");
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split("T")[0]);
   const [showForm, setShowForm] = useState(false);
-
-  const refresh = useCallback(() => setRides(getRides()), []);
+  const [showSettings, setShowSettings] = useState(false);
 
   const filtered = useMemo(() => {
     return rides
@@ -23,45 +24,49 @@ export default function Index() {
       .sort((a, b) => a.time.localeCompare(b.time));
   }, [rides, filterDirection, filterDate]);
 
+  const sheetsMode = isGoogleSheetsMode();
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-10 bg-primary px-4 py-4 text-primary-foreground">
         <div className="container max-w-lg mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Leaf className="w-6 h-6" />
             <h1 className="text-lg font-bold tracking-tight">RideShare</h1>
           </div>
-          <p className="text-xs opacity-80">Nacharam ↔ Sattva</p>
+          <div className="flex items-center gap-2">
+            {sheetsMode && (
+              <span className="text-[10px] bg-primary-foreground/20 px-1.5 py-0.5 rounded">☁ Shared</span>
+            )}
+            <button onClick={() => setShowSettings(true)} className="opacity-80 hover:opacity-100">
+              <Settings className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="container max-w-lg mx-auto px-4 py-5 space-y-5">
-        {/* Direction Filter */}
         <DirectionToggle direction={filterDirection} onChange={setFilterDirection} />
 
-        {/* Date filter + Offer button */}
         <div className="flex gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="pl-9 text-sm"
-            />
+            <Input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="pl-9 text-sm" />
           </div>
           <Button onClick={() => setShowForm(!showForm)} className="shrink-0">
             <Plus className="w-4 h-4 mr-1" /> Offer Ride
           </Button>
         </div>
 
-        {/* Offer Form */}
-        {showForm && <OfferRideForm onClose={() => setShowForm(false)} onRideAdded={refresh} />}
+        {showForm && <OfferRideForm onClose={() => setShowForm(false)} />}
 
-        {/* Ride List */}
         <div className="space-y-3">
-          {filtered.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-12">
+              <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">Loading rides...</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Car className="w-10 h-10 mx-auto mb-3 opacity-40" />
               <p className="text-sm">No rides found for this date & direction.</p>
@@ -71,18 +76,19 @@ export default function Index() {
             <>
               <p className="text-xs text-muted-foreground">{filtered.length} ride{filtered.length !== 1 ? "s" : ""} available</p>
               {filtered.map((ride) => (
-                <RideCard key={ride.id} ride={ride} onDeleted={refresh} />
+                <RideCard key={ride.id} ride={ride} />
               ))}
             </>
           )}
         </div>
 
-        {/* Footer */}
         <footer className="text-center pt-6 pb-4 text-xs text-muted-foreground border-t">
           <p>🌱 Share rides, reduce emissions, save money</p>
           <p className="mt-1">Open-source · Zero cost · Community driven</p>
         </footer>
       </main>
+
+      {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
     </div>
   );
 }
