@@ -17,7 +17,7 @@ export default function Index() {
   const [filterDirection, setFilterDirection] = useState<Ride["direction"]>("to-office");
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split("T")[0]);
   const [showForm, setShowForm] = useState(false);
-  const [activeTab, setActiveTab] = useState<"home" | "my-rides">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "my-rides" | "settings">("home");
 
   const filtered = useMemo(() => {
     return rides
