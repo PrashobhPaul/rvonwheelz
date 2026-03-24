@@ -8,12 +8,12 @@ import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 
 export default function Settings() {
-  const { profile, updateProfile } = useAuth();
+  const { profile, updateProfile, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [name, setName] = useState(profile?.name ?? "");
-  const [block, setBlock] = useState(profile?.block ?? "");
-  const [flatNumber, setFlatNumber] = useState(profile?.flat_number ?? "");
-  const [phone, setPhone] = useState(profile?.phone ?? "");
+  const [name, setName] = useState("");
+  const [block, setBlock] = useState("");
+  const [flatNumber, setFlatNumber] = useState("");
+  const [phone, setPhone] = useState("");
 
   useEffect(() => {
     if (profile) {
@@ -30,6 +30,7 @@ export default function Settings() {
       toast.error("Please fill all fields with valid data");
       return;
     }
+
     setLoading(true);
     try {
       await updateProfile({
@@ -45,6 +46,21 @@ export default function Settings() {
       setLoading(false);
     }
   };
+
+  if (authLoading && !profile) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Profile Settings</CardTitle>
+          <CardDescription>Loading your saved details...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center py-10 text-muted-foreground">
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Loading profile...
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
