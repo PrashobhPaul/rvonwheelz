@@ -90,8 +90,10 @@ export default function Index() {
               <p>by <span className="font-medium text-foreground">Prashobh Paul</span> for Raheja Vistas Elite, Nacharam</p>
             </footer>
           </>
-        ) : (
+        ) : activeTab === "my-rides" ? (
           <MyRides />
+        ) : (
+          <SettingsPage />
         )}
       </main>
 
