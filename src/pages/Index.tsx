@@ -15,6 +15,7 @@ import SettingsPage from "@/pages/Settings";
 export default function Index() {
   const { data: rides = [], isLoading } = useRides();
   const { profile, signOut } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [filterDirection, setFilterDirection] = useState<Ride["direction"]>("to-office");
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split("T")[0]);
   const [showForm, setShowForm] = useState(false);
