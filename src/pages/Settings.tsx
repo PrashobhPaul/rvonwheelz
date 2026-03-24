@@ -15,6 +15,15 @@ export default function Settings() {
   const [flatNumber, setFlatNumber] = useState(profile?.flat_number ?? "");
   const [phone, setPhone] = useState(profile?.phone ?? "");
 
+  useEffect(() => {
+    if (profile) {
+      setName(profile.name);
+      setBlock(profile.block);
+      setFlatNumber(profile.flat_number);
+      setPhone(profile.phone);
+    }
+  }, [profile]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !block.trim() || !flatNumber.trim() || phone.trim().length < 10) {
