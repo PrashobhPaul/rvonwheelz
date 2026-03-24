@@ -52,8 +52,8 @@ export default function Auth() {
       <div className="hidden lg:flex lg:w-1/2 bg-primary items-center justify-center p-12">
         <div className="max-w-md text-primary-foreground space-y-6">
           <div className="flex items-center gap-3">
-            <Leaf className="w-12 h-12" />
-            <span className="text-4xl font-bold tracking-tight">RideShare</span>
+            <img src="/images/logo.png" alt="RVonWheelz logo" className="w-16 h-16 rounded-xl" />
+            <span className="text-4xl font-bold tracking-tight">RVonWheelz</span>
           </div>
           <p className="text-lg leading-relaxed opacity-90">
             Share rides with your neighbours at Raheja Vistas Elite. Save money, reduce emissions, and build community — one ride at a time.
