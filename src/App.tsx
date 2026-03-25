@@ -25,7 +25,14 @@ function AppRoutes() {
     );
   }
 
-  if (!user) return <Auth />;
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="*" element={<Auth />} />
+      </Routes>
+    );
+  }
 
   return (
     <>
