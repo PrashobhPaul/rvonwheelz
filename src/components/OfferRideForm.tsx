@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Ride, canCreateRide } from "@/lib/types";
 import { DirectionToggle } from "./DirectionToggle";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ interface OfferRideFormProps {
 }
 
 export function OfferRideForm({ onClose }: OfferRideFormProps) {
+  const { profile } = useAuth();
   const [direction, setDirection] = useState<Ride["direction"]>("to-office");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [time, setTime] = useState("08:30");
