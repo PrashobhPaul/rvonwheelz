@@ -56,6 +56,7 @@ export function RideNotificationListener() {
         async (payload) => {
           const updated = payload.new as {
             passenger_id: string;
+            passenger_name: string;
             status: string;
             ride_id: string;
           };
@@ -68,6 +69,21 @@ export function RideNotificationListener() {
               toast.error("❌ Your seat request was rejected.");
             } else if (updated.status === "cancelled_by_driver") {
               toast.error("🚫 The driver has cancelled this ride.");
+            }
+          }
+
+          // Notify ride owner when an approved passenger cancels
+          if (updated.status === "cancelled" && updated.passenger_id !== user.id) {
+            const { data: ride } = await supabase
+              .from("rides")
+              .select("id, user_id")
+              .eq("id", updated.ride_id)
+              .single();
+
+            if (ride?.user_id === user.id) {
+              toast.info(`⚠️ ${updated.passenger_name} cancelled their seat on your ride.`, {
+                duration: 6000,
+              });
             }
           }
 
