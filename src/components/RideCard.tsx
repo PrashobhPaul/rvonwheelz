@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Car, Phone, Trash2, ArrowRight, ArrowLeft, UserPlus, Check, X, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useRequests, useDeleteRide, useCreateRequest, useUpdateRequestStatus, useProfile } from "@/hooks/useRides";
+import { useRequests, useDeleteRide, useCreateRequest, useUpdateRequestStatus, useProfile, useRides } from "@/hooks/useRides";
 import { useAuth } from "@/hooks/useAuth";
 
 interface RideCardProps {
@@ -30,6 +30,8 @@ export function RideCard({ ride }: RideCardProps) {
   const { user } = useAuth();
 
   const { data: requests = [] } = useRequests(ride.id);
+  const { data: allRides = [] } = useRides();
+  const { data: allRequests = [] } = useRequests();
   const { data: driverProfile } = useProfile(ride.user_id);
   const deleteMutation = useDeleteRide();
   const requestMutation = useCreateRequest();
@@ -45,6 +47,16 @@ export function RideCard({ ride }: RideCardProps) {
   const isOwner = user?.id === ride.user_id;
   const pendingRequests = requests.filter((r) => r.status === "pending");
   const myRequest = requests.find((r) => r.passenger_id === user?.id);
+  const rideIsOngoing = isRideOngoing(ride);
+
+  // Check if user has any ongoing ride (as driver or approved passenger)
+  const hasOngoingRide = allRides.some((r) => {
+    if (!isRideOngoing(r)) return false;
+    if (r.user_id === user?.id) return true;
+    return allRequests.some(
+      (req) => req.ride_id === r.id && req.passenger_id === user?.id && req.status === "approved"
+    );
+  });
 
   const handleDelete = () => {
     deleteMutation.mutate(ride.id, {
