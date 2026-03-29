@@ -96,7 +96,21 @@ export function canRejectPassenger(ride: Ride): boolean {
   return getMinutesUntilRide(ride) >= 15;
 }
 
-/** Passenger can cancel only if ride is ≥30 min away */
+/** Passenger can cancel only if ride is ≥15 min away */
 export function canCancelRequest(ride: Ride): boolean {
-  return getMinutesUntilRide(ride) >= 30;
+  return getMinutesUntilRide(ride) >= 15;
+}
+
+/** A ride is "ongoing" from its start time until 1 hour after */
+export function isRideOngoing(ride: { date: string; time: string }): boolean {
+  const rideDateTime = new Date(`${ride.date}T${ride.time}`);
+  const now = Date.now();
+  const startMs = rideDateTime.getTime();
+  return now >= startMs && now < startMs + 60 * 60000;
+}
+
+/** Get today's date in local timezone as YYYY-MM-DD */
+export function getLocalToday(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }

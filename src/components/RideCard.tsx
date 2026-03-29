@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { getDirectionShort, canRejectPassenger, canCancelRequest, getMinutesUntilRide, HOME_LOCATION } from "@/lib/types";
+import { getDirectionShort, canRejectPassenger, canCancelRequest, getMinutesUntilRide, isRideOngoing, HOME_LOCATION } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
