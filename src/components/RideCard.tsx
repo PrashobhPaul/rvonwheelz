@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { getDirectionShort, canRejectPassenger, canCancelRequest, getMinutesUntilRide, HOME_LOCATION } from "@/lib/types";
+import { getDirectionShort, canRejectPassenger, canCancelRequest, getMinutesUntilRide, isRideOngoing, HOME_LOCATION } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Clock, Users, Car, Phone, Trash2, ArrowRight, ArrowLeft, UserPlus, Check, X, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { useRequests, useDeleteRide, useCreateRequest, useUpdateRequestStatus, useProfile } from "@/hooks/useRides";
+import { useRequests, useDeleteRide, useCreateRequest, useUpdateRequestStatus, useProfile, useRides } from "@/hooks/useRides";
 import { useAuth } from "@/hooks/useAuth";
 
 interface RideCardProps {
@@ -30,6 +30,8 @@ export function RideCard({ ride }: RideCardProps) {
   const { user } = useAuth();
 
   const { data: requests = [] } = useRequests(ride.id);
+  const { data: allRides = [] } = useRides();
+  const { data: allRequests = [] } = useRequests();
   const { data: driverProfile } = useProfile(ride.user_id);
   const deleteMutation = useDeleteRide();
   const requestMutation = useCreateRequest();
@@ -45,6 +47,16 @@ export function RideCard({ ride }: RideCardProps) {
   const isOwner = user?.id === ride.user_id;
   const pendingRequests = requests.filter((r) => r.status === "pending");
   const myRequest = requests.find((r) => r.passenger_id === user?.id);
+  const rideIsOngoing = isRideOngoing(ride);
+
+  // Check if user has any ongoing ride (as driver or approved passenger)
+  const hasOngoingRide = allRides.some((r) => {
+    if (!isRideOngoing(r)) return false;
+    if (r.user_id === user?.id) return true;
+    return allRequests.some(
+      (req) => req.ride_id === r.id && req.passenger_id === user?.id && req.status === "approved"
+    );
+  });
 
   const handleDelete = () => {
     deleteMutation.mutate(ride.id, {
@@ -54,6 +66,10 @@ export function RideCard({ ride }: RideCardProps) {
   };
 
   const handleRequest = () => {
+    if (hasOngoingRide) {
+      toast.error("You have an ongoing ride. Wait until it ends before requesting a new one.");
+      return;
+    }
     if (availableSeats <= 0) {
       toast.error("No seats available");
       return;
@@ -87,7 +103,7 @@ export function RideCard({ ride }: RideCardProps) {
   const handleCancelMyRequest = () => {
     if (!myRequest) return;
     if (!canCancelRequest(rideForTime)) {
-      toast.error("Cannot cancel within 30 minutes of ride start");
+      toast.error("Cannot cancel within 15 minutes of ride start");
       return;
     }
     statusMutation.mutate({ id: myRequest.id, status: "cancelled" }, {
@@ -161,7 +177,7 @@ export function RideCard({ ride }: RideCardProps) {
             </Button>
           )}
 
-          {!isOwner && !isPast && availableSeats > 0 && (!myRequest || myRequest.status === "cancelled" || myRequest.status === "rejected") && (
+          {!isOwner && !isPast && !rideIsOngoing && availableSeats > 0 && !hasOngoingRide && (!myRequest || myRequest.status === "cancelled" || myRequest.status === "rejected") && (
             <Button variant="default" size="sm" onClick={handleRequest} disabled={requestMutation.isPending} className="text-xs">
               <UserPlus className="w-3.5 h-3.5 mr-1" /> {requestMutation.isPending ? "Sending..." : "Request Seat"}
             </Button>
