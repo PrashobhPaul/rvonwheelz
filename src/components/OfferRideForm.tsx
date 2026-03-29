@@ -9,14 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Car, X } from "lucide-react";
 import { toast } from "sonner";
-import { useCreateRide } from "@/hooks/useRides";
+import { useCreateRide, useRides, useRequests } from "@/hooks/useRides";
 
 interface OfferRideFormProps {
   onClose: () => void;
 }
 
 export function OfferRideForm({ onClose }: OfferRideFormProps) {
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const [direction, setDirection] = useState<Ride["direction"]>("to-office");
   const [destination, setDestination] = useState(DEFAULT_DESTINATION);
   const [date, setDate] = useState(getLocalToday());
@@ -25,6 +25,19 @@ export function OfferRideForm({ onClose }: OfferRideFormProps) {
   const [seats, setSeats] = useState(3);
   const [vehicle, setVehicle] = useState("");
   const mutation = useCreateRide();
+  const { data: allRides = [] } = useRides();
+  const { data: allRequests = [] } = useRequests();
+
+  // Check if user has an ongoing ride (as driver or approved passenger)
+  const hasOngoingRide = allRides.some((r) => {
+    if (!isRideOngoing(r)) return false;
+    // User is the driver
+    if (r.user_id === user?.id) return true;
+    // User is an approved passenger
+    return allRequests.some(
+      (req) => req.ride_id === r.id && req.passenger_id === user?.id && req.status === "approved"
+    );
+  });
 
   useEffect(() => {
     if (profile?.vehicle_name && !vehicle) {
@@ -39,8 +52,12 @@ export function OfferRideForm({ onClose }: OfferRideFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (hasOngoingRide) {
+      toast.error("You have an ongoing ride. You cannot offer a new ride until it ends.");
+      return;
+    }
     if (!canCreateRide(date, time)) {
-      toast.error("Cannot create a ride that starts within 30 minutes");
+      toast.error("Ride must start at least 30 minutes from now");
       return;
     }
     mutation.mutate(
