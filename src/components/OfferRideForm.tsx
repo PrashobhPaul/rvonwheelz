@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Ride, canCreateRide, DESTINATIONS, DEFAULT_DESTINATION } from "@/lib/types";
+import { Ride, canCreateRide, isRideOngoing, getLocalToday, DESTINATIONS, DEFAULT_DESTINATION } from "@/lib/types";
 import { DirectionToggle } from "./DirectionToggle";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ export function OfferRideForm({ onClose }: OfferRideFormProps) {
   const { profile } = useAuth();
   const [direction, setDirection] = useState<Ride["direction"]>("to-office");
   const [destination, setDestination] = useState(DEFAULT_DESTINATION);
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [date, setDate] = useState(getLocalToday());
   const [time, setTime] = useState("08:30");
   const [vehicleType, setVehicleType] = useState<"car" | "bike">("car");
   const [seats, setSeats] = useState(3);

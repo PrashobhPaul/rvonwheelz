@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTheme } from "next-themes";
-import { Ride, DESTINATIONS, DEFAULT_DESTINATION } from "@/lib/types";
+import { Ride, DESTINATIONS, DEFAULT_DESTINATION, getLocalToday } from "@/lib/types";
 import { DirectionToggle } from "@/components/DirectionToggle";
 import { OfferRideForm } from "@/components/OfferRideForm";
 import { RideCard } from "@/components/RideCard";
@@ -19,7 +19,7 @@ export default function Index() {
   const { theme, setTheme } = useTheme();
   const [filterDirection, setFilterDirection] = useState<Ride["direction"]>("to-office");
   const [filterDestination, setFilterDestination] = useState<string>("all");
-  const [filterDate, setFilterDate] = useState(new Date().toISOString().split("T")[0]);
+  const [filterDate, setFilterDate] = useState(getLocalToday());
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState<"home" | "my-rides" | "settings">("home");
 
