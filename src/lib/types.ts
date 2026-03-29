@@ -79,16 +79,22 @@ export function getDirectionShort(direction: Ride["direction"]) {
   return direction === "to-office" ? "To Destination" : "To Home";
 }
 
+/** Current time truncated to the start of the current minute (ride times have minute precision) */
+function nowMinute(): number {
+  const n = Date.now();
+  return n - (n % 60000);
+}
+
 /** Minutes remaining until ride starts */
 export function getMinutesUntilRide(ride: Ride): number {
   const rideDateTime = new Date(`${ride.date}T${ride.time}`);
-  return (rideDateTime.getTime() - Date.now()) / 60000;
+  return (rideDateTime.getTime() - nowMinute()) / 60000;
 }
 
 /** Ride cannot be created if it starts within 30 minutes */
 export function canCreateRide(date: string, time: string): boolean {
   const rideDateTime = new Date(`${date}T${time}`);
-  return (rideDateTime.getTime() - Date.now()) / 60000 >= 30;
+  return (rideDateTime.getTime() - nowMinute()) / 60000 >= 30;
 }
 
 /** Rider can reject a passenger only if ride is ≥15 min away */
@@ -104,7 +110,7 @@ export function canCancelRequest(ride: Ride): boolean {
 /** A ride is "ongoing" from its start time until 1 hour after */
 export function isRideOngoing(ride: { date: string; time: string }): boolean {
   const rideDateTime = new Date(`${ride.date}T${ride.time}`);
-  const now = Date.now();
+  const now = nowMinute();
   const startMs = rideDateTime.getTime();
   return now >= startMs && now < startMs + 60 * 60000;
 }
