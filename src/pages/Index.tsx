@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTheme } from "next-themes";
-import { Ride, DESTINATIONS, DEFAULT_DESTINATION, getLocalToday } from "@/lib/types";
+import { Ride, DESTINATIONS, DEFAULT_DESTINATION, getLocalToday, getMinutesUntilRide } from "@/lib/types";
 import { DirectionToggle } from "@/components/DirectionToggle";
 import { OfferRideForm } from "@/components/OfferRideForm";
 import { RideCard } from "@/components/RideCard";
