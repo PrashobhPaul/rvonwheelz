@@ -3,8 +3,8 @@ import { useRides, useRequests, useCompletionStats } from "@/hooks/useRides";
 import { useAuth } from "@/hooks/useAuth";
 import { RideCard } from "@/components/RideCard";
 import { Badge } from "@/components/ui/badge";
-import { Car, TicketCheck, Loader2, TrendingUp, UserCheck } from "lucide-react";
-import { getDirectionShort } from "@/lib/types";
+import { Car, TicketCheck, Loader2, TrendingUp, UserCheck, Radio } from "lucide-react";
+import { getDirectionShort, isRideOngoing } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function MyRides() {
