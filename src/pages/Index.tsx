@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useTheme } from "next-themes";
-import { Ride, DESTINATIONS, DEFAULT_DESTINATION, getLocalToday } from "@/lib/types";
+import { Ride, DESTINATIONS, DEFAULT_DESTINATION, getLocalToday, getMinutesUntilRide } from "@/lib/types";
 import { DirectionToggle } from "@/components/DirectionToggle";
 import { OfferRideForm } from "@/components/OfferRideForm";
 import { RideCard } from "@/components/RideCard";
@@ -28,6 +28,7 @@ export default function Index() {
       .filter((r) => r.direction === filterDirection)
       .filter((r) => !filterDate || r.date === filterDate)
       .filter((r) => filterDestination === "all" || r.destination === filterDestination)
+      .filter((r) => getMinutesUntilRide(r as any) >= 15)
       .sort((a, b) => a.time.localeCompare(b.time));
   }, [rides, filterDirection, filterDate, filterDestination]);
 
