@@ -4,6 +4,7 @@ import { Ride, DESTINATIONS, DEFAULT_DESTINATION, getLocalToday, getMinutesUntil
 import { DirectionToggle } from "@/components/DirectionToggle";
 import { OfferRideForm } from "@/components/OfferRideForm";
 import { RideCard } from "@/components/RideCard";
+import { SmartRideBanner } from "@/components/SmartRideBanner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
