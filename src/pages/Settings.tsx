@@ -26,7 +26,7 @@ function formatTime12h(time24: string): string {
 
 function getRouteLabel(direction: "to-office" | "to-home", destination: string) {
   const short = destination.length > 30 ? destination.slice(0, 28) + "…" : destination;
-  const homeShort = "Raheja Vistas Elite";
+  const homeShort = HOME_LOCATION.split(",")[0];
   if (direction === "to-office") return { from: homeShort, to: short };
   return { from: short, to: homeShort };
 }
