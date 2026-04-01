@@ -7,9 +7,19 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Save, Plus, Trash2, Clock, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
-import { getFrequentPatterns, FrequentPattern, recordHabit } from "@/lib/habitTracker";
+import { getFrequentPatterns, FrequentPattern, recordHabit, deletePattern } from "@/lib/habitTracker";
 import { HOME_LOCATION } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -159,14 +169,8 @@ export default function Settings() {
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [patterns, setPatterns] = useState<FrequentPattern[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
-
-  const refreshPatterns = useCallback(() => {
-    setPatterns(getFrequentPatterns());
-  }, []);
-
-  useEffect(() => {
-    refreshPatterns();
-  }, [refreshPatterns]);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
+  const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(null);
 
   useEffect(() => {
     if (profile) {
@@ -204,10 +208,27 @@ export default function Settings() {
     }
   };
 
+  const refreshPatterns = useCallback(() => {
+    setPatterns(getFrequentPatterns());
+  }, []);
+
+  useEffect(() => {
+    refreshPatterns();
+  }, [refreshPatterns]);
+
   const handleClearHabits = () => {
     localStorage.removeItem("ride_habits");
     setPatterns([]);
+    setConfirmClearAll(false);
     toast.success("All commute habits cleared");
+  };
+
+  const handleDeleteSingle = (index: number) => {
+    const p = patterns[index];
+    deletePattern(p.time, p.direction, p.action);
+    refreshPatterns();
+    setConfirmDeleteIndex(null);
+    toast.success("Routine deleted");
   };
 
   if (authLoading && !profile) {
@@ -293,6 +314,13 @@ export default function Settings() {
                       <span className="truncate">{route.from}</span>
                       <ArrowRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
                       <span className="truncate">{route.to}</span>
+                      <button
+                        onClick={() => setConfirmDeleteIndex(i)}
+                        className="ml-auto shrink-0 p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        aria-label="Delete routine"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -330,7 +358,7 @@ export default function Settings() {
                 variant="outline"
                 size="sm"
                 className="text-destructive hover:text-destructive"
-                onClick={handleClearHabits}
+                onClick={() => setConfirmClearAll(true)}
               >
                 <Trash2 className="w-4 h-4 mr-1" />
                 Clear All
@@ -345,6 +373,42 @@ export default function Settings() {
         onOpenChange={setShowAddDialog}
         onAdd={refreshPatterns}
       />
+
+      {/* Confirm Clear All */}
+      <AlertDialog open={confirmClearAll} onOpenChange={setConfirmClearAll}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear all habits?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete all your saved commute routines. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearHabits} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Clear All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm Delete Single */}
+      <AlertDialog open={confirmDeleteIndex !== null} onOpenChange={(open) => !open && setConfirmDeleteIndex(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this routine?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This routine will be permanently removed from your habits.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => confirmDeleteIndex !== null && handleDeleteSingle(confirmDeleteIndex)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
