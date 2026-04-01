@@ -358,7 +358,7 @@ export default function Settings() {
                 variant="outline"
                 size="sm"
                 className="text-destructive hover:text-destructive"
-                onClick={handleClearHabits}
+                onClick={() => setConfirmClearAll(true)}
               >
                 <Trash2 className="w-4 h-4 mr-1" />
                 Clear All
