@@ -1,11 +1,100 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Loader2, Save } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Save, Plus, Trash2, Clock, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { getFrequentPatterns, FrequentPattern, recordHabit } from "@/lib/habitTracker";
+import { DESTINATIONS, DEFAULT_DESTINATION } from "@/lib/types";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+function formatTime12h(time24: string): string {
+  const [h, m] = time24.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+}
+
+function getRouteLabel(direction: "to-office" | "to-home", destination: string) {
+  const short = destination.length > 30 ? destination.slice(0, 28) + "…" : destination;
+  const homeShort = "Raheja Vistas Elite";
+  if (direction === "to-office") return { from: homeShort, to: short };
+  return { from: short, to: homeShort };
+}
+
+function AddRoutineDialog({ onAdd, open, onOpenChange }: { onAdd: () => void; open: boolean; onOpenChange: (v: boolean) => void }) {
+  const [time, setTime] = useState("08:00");
+  const [direction, setDirection] = useState<"to-office" | "to-home">("to-office");
+  const [destination, setDestination] = useState(DEFAULT_DESTINATION);
+  const [action, setAction] = useState<"offered" | "booked">("offered");
+
+  const handleAdd = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    // Record twice to create a pattern (≥2 required)
+    recordHabit({ time, direction, destination, action, date: today });
+    recordHabit({ time, direction, destination, action, date: today });
+    toast.success("Routine added! You'll get reminders 30 min before.");
+    onOpenChange(false);
+    onAdd();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add Commute Routine</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div className="space-y-1.5">
+            <Label>Time</Label>
+            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Direction</Label>
+            <Select value={direction} onValueChange={(v) => setDirection(v as "to-office" | "to-home")}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="to-office">Going (Home → Destination)</SelectItem>
+                <SelectItem value="to-home">Returning (Destination → Home)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Destination</Label>
+            <Select value={destination} onValueChange={setDestination}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {DESTINATIONS.map((d) => (
+                  <SelectItem key={d} value={d}>{d}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Action</Label>
+            <Select value={action} onValueChange={(v) => setAction(v as "offered" | "booked")}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="offered">Offer Ride</SelectItem>
+                <SelectItem value="booked">Book Ride</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={handleAdd} className="w-full">Add Routine</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function Settings() {
   const { profile, updateProfile, loading: authLoading } = useAuth();
@@ -16,6 +105,16 @@ export default function Settings() {
   const [phone, setPhone] = useState("");
   const [vehicleName, setVehicleName] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
+  const [patterns, setPatterns] = useState<FrequentPattern[]>([]);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+
+  const refreshPatterns = useCallback(() => {
+    setPatterns(getFrequentPatterns());
+  }, []);
+
+  useEffect(() => {
+    refreshPatterns();
+  }, [refreshPatterns]);
 
   useEffect(() => {
     if (profile) {
@@ -53,6 +152,12 @@ export default function Settings() {
     }
   };
 
+  const handleClearHabits = () => {
+    localStorage.removeItem("ride_habits");
+    setPatterns([]);
+    toast.success("All commute habits cleared");
+  };
+
   if (authLoading && !profile) {
     return (
       <Card className="max-w-lg mx-auto">
@@ -69,45 +174,125 @@ export default function Settings() {
   }
 
   return (
-    <Card className="max-w-lg mx-auto">
-      <CardHeader>
-        <CardTitle className="text-lg">Profile Settings</CardTitle>
-        <CardDescription>Update your personal details</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="s-name">Full Name</Label>
-            <Input id="s-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required maxLength={50} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+    <div className="max-w-lg mx-auto space-y-4">
+      {/* Profile Settings Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Profile Settings</CardTitle>
+          <CardDescription>Update your personal details</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="s-block">Block</Label>
-              <Input id="s-block" value={block} onChange={(e) => setBlock(e.target.value)} placeholder="e.g. A, B, C" required maxLength={10} />
+              <Label htmlFor="s-name">Full Name</Label>
+              <Input id="s-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required maxLength={50} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="s-block">Block</Label>
+                <Input id="s-block" value={block} onChange={(e) => setBlock(e.target.value)} placeholder="e.g. A, B, C" required maxLength={10} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="s-flat">Flat Number</Label>
+                <Input id="s-flat" value={flatNumber} onChange={(e) => setFlatNumber(e.target.value)} placeholder="e.g. 301" required maxLength={10} />
+              </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="s-flat">Flat Number</Label>
-              <Input id="s-flat" value={flatNumber} onChange={(e) => setFlatNumber(e.target.value)} placeholder="e.g. 301" required maxLength={10} />
+              <Label htmlFor="s-phone">Mobile Number</Label>
+              <Input id="s-phone" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="10-digit number" required />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="s-vehicle">Vehicle Name</Label>
+              <Input id="s-vehicle" value={vehicleName} onChange={(e) => setVehicleName(e.target.value)} placeholder="e.g. Hyundai i20, Honda Activa" maxLength={50} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="s-reg">Registration Number</Label>
+              <Input id="s-reg" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value.toUpperCase())} placeholder="e.g. TS09EA1234" maxLength={15} />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Changes
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Commute Habits Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Commute Habits</CardTitle>
+          <CardDescription>Your detected routines — get reminders 30 min before</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {patterns.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No habits detected yet. Offer or book rides to build patterns, or add a routine manually.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {patterns.map((p, i) => {
+                const route = getRouteLabel(p.direction, p.destination);
+                return (
+                  <div
+                    key={`${p.time}-${p.direction}-${p.action}-${i}`}
+                    className="rounded-lg border bg-muted/50 p-3 space-y-1.5"
+                  >
+                    <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                      <span className="truncate">{route.from}</span>
+                      <ArrowRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                      <span className="truncate">{route.to}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        {formatTime12h(p.time)}
+                      </div>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        {p.direction === "to-office" ? "Going" : "Returning"}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                        {p.action === "offered" ? "Offer" : "Book"}
+                      </Badge>
+                      <span className="text-[10px] text-muted-foreground ml-auto">
+                        {p.count} times
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => setShowAddDialog(true)}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Add Routine
+            </Button>
+            {patterns.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+                onClick={handleClearHabits}
+              >
+                <Trash2 className="w-4 h-4 mr-1" />
+                Clear All
+              </Button>
+            )}
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="s-phone">Mobile Number</Label>
-            <Input id="s-phone" value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} placeholder="10-digit number" required />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="s-vehicle">Vehicle Name</Label>
-            <Input id="s-vehicle" value={vehicleName} onChange={(e) => setVehicleName(e.target.value)} placeholder="e.g. Hyundai i20, Honda Activa" maxLength={50} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="s-reg">Registration Number</Label>
-            <Input id="s-reg" value={registrationNumber} onChange={(e) => setRegistrationNumber(e.target.value.toUpperCase())} placeholder="e.g. TS09EA1234" maxLength={15} />
-          </div>
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-            Save Changes
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      <AddRoutineDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onAdd={refreshPatterns}
+      />
+    </div>
   );
 }
