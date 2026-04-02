@@ -45,7 +45,7 @@ export default function MyRides() {
   // Derive pattern stats
   const mostFrequentTime = useMemo(() => {
     if (patterns.length === 0) return null;
-    const sorted = [...patterns].sort((a, b) => b.count - a.count);
+    const sorted = [...patterns].sort((a, b) => b.frequency - a.frequency);
     const [h, m] = sorted[0].time.split(":").map(Number);
     const ampm = h >= 12 ? "PM" : "AM";
     const h12 = h % 12 || 12;
@@ -54,13 +54,13 @@ export default function MyRides() {
 
   const mostUsedRoute = useMemo(() => {
     if (patterns.length === 0) return null;
-    const sorted = [...patterns].sort((a, b) => b.count - a.count);
-    return sorted[0].destination;
+    const sorted = [...patterns].sort((a, b) => b.frequency - a.frequency);
+    return `${sorted[0].from} → ${sorted[0].to}`;
   }, [patterns]);
 
   const habitConsistency = useMemo(() => {
     if (patterns.length === 0) return null;
-    const totalCount = patterns.reduce((sum, p) => sum + p.count, 0);
+    const totalCount = patterns.reduce((sum, p) => sum + p.frequency, 0);
     const daysPerWeek = Math.min(7, Math.round(totalCount / Math.max(1, patterns.length)));
     return `${daysPerWeek} days/week`;
   }, [patterns]);
