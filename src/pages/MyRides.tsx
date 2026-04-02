@@ -101,6 +101,42 @@ export default function MyRides() {
         </Card>
       </div>
 
+      {/* Ride Patterns */}
+      {patterns.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold text-foreground">Your Ride Patterns</h2>
+          <div className="grid grid-cols-3 gap-2">
+            <Card>
+              <CardContent className="p-3 flex flex-col items-center text-center gap-1.5">
+                <div className="rounded-full bg-primary/10 p-2">
+                  <Clock className="w-4 h-4 text-primary" />
+                </div>
+                <p className="text-base font-bold text-foreground">{mostFrequentTime}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight">Most Frequent Time</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 flex flex-col items-center text-center gap-1.5">
+                <div className="rounded-full bg-primary/10 p-2">
+                  <MapPin className="w-4 h-4 text-primary" />
+                </div>
+                <p className="text-xs font-bold text-foreground leading-tight">{mostUsedRoute}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight">Most Used Route</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-3 flex flex-col items-center text-center gap-1.5">
+                <div className="rounded-full bg-primary/10 p-2">
+                  <CalendarCheck className="w-4 h-4 text-primary" />
+                </div>
+                <p className="text-base font-bold text-foreground">{habitConsistency}</p>
+                <p className="text-[10px] text-muted-foreground leading-tight">Habit Consistency</p>
+              </CardContent>
+            </Card>
+          </div>
+        </section>
+      )}
+
       {/* My Offered Rides */}
       <section className="space-y-3">
         <div className="flex items-center gap-2">
