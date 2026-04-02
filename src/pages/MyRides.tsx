@@ -104,6 +104,32 @@ export default function MyRides() {
         </Card>
       </div>
 
+      {/* Habit Highlight */}
+      {patterns.length > 0 && (() => {
+        const top = [...patterns].sort((a, b) => b.count - a.count)[0];
+        const [h, m] = top.time.split(":").map(Number);
+        const ampm = h >= 12 ? "PM" : "AM";
+        const h12 = h % 12 || 12;
+        const timeStr = `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
+        return (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-3 flex items-center justify-between gap-3">
+              <div className="space-y-0.5 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  🚗 You usually travel at {timeStr}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">
+                  📍 {top.destination}
+                </p>
+              </div>
+              <Button size="sm" variant="secondary" className="shrink-0 text-xs h-7" onClick={() => navigate("/")}>
+                Find Ride
+              </Button>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {/* Ride Patterns */}
       {patterns.length > 0 && (
         <section className="space-y-3">
