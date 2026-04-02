@@ -63,10 +63,11 @@ function AddRoutineDialog({ onAdd, open, onOpenChange }: { onAdd: () => void; op
       return;
     }
     const destination = direction === "to-office" ? to.trim() : from.trim();
+    const origin = direction === "to-office" ? from.trim() : to.trim();
     const today = new Date().toISOString().slice(0, 10);
     // Record twice to create a pattern (≥2 required)
-    recordHabit({ time, direction, destination, action, date: today });
-    recordHabit({ time, direction, destination, action, date: today });
+    recordHabit({ time, direction, destination, from: origin, action, date: today, days: selectedDays });
+    recordHabit({ time, direction, destination, from: origin, action, date: today, days: selectedDays });
     toast.success("Routine added! You'll get reminders 30 min before.");
     onOpenChange(false);
     setFrom("Raheja Vistas Elite");
