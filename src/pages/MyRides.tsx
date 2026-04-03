@@ -233,10 +233,15 @@ export default function MyRides() {
                   </Badge>
                 </div>
                 {req.ride && (
-                  <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                    <span>{req.ride.date} · {req.ride.time}</span>
-                    <span>{getDirectionShort(req.ride.direction as "to-office" | "to-home")}</span>
-                    <span>{req.ride.vehicle || "Car"}</span>
+                  <div className="space-y-0.5">
+                    <p className="text-xs text-muted-foreground">
+                      {req.ride.date} · {req.ride.time}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">📍 {req.ride.destination || "Destination"}</span>
+                      {" · "}
+                      🚗 {req.ride.vehicle || "Car"}
+                    </p>
                   </div>
                 )}
               </div>
