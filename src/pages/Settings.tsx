@@ -44,8 +44,7 @@ function getRouteLabel(direction: "to-office" | "to-home", destination: string) 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
 function AddRoutineDialog({ onAdd, open, onOpenChange }: { onAdd: () => void; open: boolean; onOpenChange: (v: boolean) => void }) {
-  const [from, setFrom] = useState("Raheja Vistas Elite");
-  const [to, setTo] = useState("");
+  const [destination, setDestination] = useState(DEFAULT_DESTINATION);
   const [time, setTime] = useState("08:00");
   const [direction, setDirection] = useState<"to-office" | "to-home">("to-office");
   const [action, setAction] = useState<"offered" | "booked">("offered");
