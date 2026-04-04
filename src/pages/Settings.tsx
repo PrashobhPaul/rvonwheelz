@@ -168,6 +168,7 @@ export default function Settings() {
   const [phone, setPhone] = useState("");
   const [vehicleName, setVehicleName] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
+  const [officeLocation, setOfficeLocation] = useState(DEFAULT_DESTINATION);
   const [patterns, setPatterns] = useState<FrequentPattern[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [confirmClearAll, setConfirmClearAll] = useState(false);
