@@ -74,14 +74,8 @@ function AddRoutineDialog({ onAdd, open, onOpenChange }: { onAdd: () => void; op
     onAdd();
   };
 
-  // Swap from/to when direction changes
   const handleDirectionChange = (v: string) => {
-    const newDir = v as "to-office" | "to-home";
-    if (newDir !== direction) {
-      setFrom(to);
-      setTo(from);
-    }
-    setDirection(newDir);
+    setDirection(v as "to-office" | "to-home");
   };
 
   return (
@@ -92,12 +86,15 @@ function AddRoutineDialog({ onAdd, open, onOpenChange }: { onAdd: () => void; op
         </DialogHeader>
         <div className="space-y-4 pt-2">
           <div className="space-y-1.5">
-            <Label>From</Label>
-            <Input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="e.g. Raheja Vistas Elite" />
-          </div>
-          <div className="space-y-1.5">
-            <Label>To</Label>
-            <Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="e.g. HITEC City" />
+            <Label>Destination</Label>
+            <Select value={destination} onValueChange={setDestination}>
+              <SelectTrigger><SelectValue placeholder="Select destination" /></SelectTrigger>
+              <SelectContent>
+                {DESTINATIONS.map((dest) => (
+                  <SelectItem key={dest} value={dest}>{dest}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1.5">
             <Label>Time</Label>
