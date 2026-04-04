@@ -202,6 +202,7 @@ export default function Settings() {
         phone: phone.trim(),
         vehicle_name: vehicleName.trim(),
         registration_number: registrationNumber.trim(),
+        office_location: officeLocation,
       });
       toast.success("Profile updated!");
     } catch (err: any) {
