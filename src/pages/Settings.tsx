@@ -182,6 +182,7 @@ export default function Settings() {
       setPhone(profile.phone);
       setVehicleName(profile.vehicle_name || "");
       setRegistrationNumber(profile.registration_number || "");
+      setOfficeLocation(profile.office_location || DEFAULT_DESTINATION);
     }
   }, [profile]);
 
