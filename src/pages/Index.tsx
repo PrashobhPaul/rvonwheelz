@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import { Ride, DESTINATIONS, DEFAULT_DESTINATION, getLocalToday, getMinutesUntilRide } from "@/lib/types";
 import { DirectionToggle } from "@/components/DirectionToggle";
@@ -23,6 +23,24 @@ export default function Index() {
   const [filterDate, setFilterDate] = useState(getLocalToday());
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState<"home" | "my-rides" | "settings">("home");
+  const userChangedDestination = useRef(false);
+
+  // Auto-select office location from profile, but don't override manual changes
+  useEffect(() => {
+    if (profile?.office_location && !userChangedDestination.current) {
+      setFilterDestination(profile.office_location);
+    }
+  }, [profile?.office_location]);
+
+  const handleDestinationChange = (value: string) => {
+    userChangedDestination.current = true;
+    setFilterDestination(value);
+  };
+
+  // Resolve the effective destination for the direction toggle display
+  const effectiveDestination = filterDestination !== "all"
+    ? filterDestination
+    : (profile?.office_location || DEFAULT_DESTINATION);
 
   const filtered = useMemo(() => {
     return rides
@@ -66,13 +84,13 @@ export default function Index() {
             <DirectionToggle
               direction={filterDirection}
               onChange={setFilterDirection}
-              destination={filterDestination !== "all" ? filterDestination : undefined}
+              destination={effectiveDestination}
             />
 
             <div className="space-y-2">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">Filter by Destination</label>
-                <Select value={filterDestination} onValueChange={setFilterDestination}>
+                <Select value={filterDestination} onValueChange={handleDestinationChange}>
                   <SelectTrigger className="text-sm">
                     <SelectValue placeholder="All destinations" />
                   </SelectTrigger>
