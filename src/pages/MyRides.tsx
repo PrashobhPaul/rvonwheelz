@@ -8,7 +8,6 @@ import { getDirectionShort, isRideOngoing } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { getFrequentPatterns, FrequentPattern } from "@/lib/habitTracker";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 
 interface MyRidesProps {
   onSwitchToHome?: () => void;
