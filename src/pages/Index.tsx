@@ -90,7 +90,7 @@ export default function Index() {
             <div className="space-y-2">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">Filter by Destination</label>
-                <Select value={filterDestination} onValueChange={setFilterDestination}>
+                <Select value={filterDestination} onValueChange={handleDestinationChange}>
                   <SelectTrigger className="text-sm">
                     <SelectValue placeholder="All destinations" />
                   </SelectTrigger>
