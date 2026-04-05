@@ -10,13 +10,16 @@ import { getFrequentPatterns, FrequentPattern } from "@/lib/habitTracker";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
-export default function MyRides() {
+interface MyRidesProps {
+  onSwitchToHome?: () => void;
+}
+
+export default function MyRides({ onSwitchToHome }: MyRidesProps) {
   const { user } = useAuth();
   const { data: rides = [], isLoading: ridesLoading } = useRides();
   const { data: allRequests = [], isLoading: reqLoading } = useRequests();
   const { data: completionStats } = useCompletionStats(user?.id);
   const [patterns, setPatterns] = useState(getFrequentPatterns());
-  const navigate = useNavigate();
 
   useEffect(() => {
     setPatterns(getFrequentPatterns());
