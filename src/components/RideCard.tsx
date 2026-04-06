@@ -125,7 +125,7 @@ export function RideCard({ ride }: RideCardProps) {
       <CardContent className="p-4 space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <Link to={`/profile/${ride.user_id}`} className="font-semibold text-foreground hover:text-primary transition-colors underline-offset-2 hover:underline">{ride.name}</Link>
+          <Link to={`/profile/${ride.user_id}`} className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">{ride.name}</Link>
           <div className="flex items-center gap-1.5">
             <Badge variant="outline" className="text-xs">{availableSeats}/{ride.seats} seats</Badge>
             <Badge variant="secondary" className="text-xs">
