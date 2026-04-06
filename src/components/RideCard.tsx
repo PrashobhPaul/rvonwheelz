@@ -8,6 +8,8 @@ import { Clock, Users, Car, Phone, Trash2, ArrowRight, ArrowLeft, UserPlus, Chec
 import { toast } from "sonner";
 import { useRequests, useDeleteRide, useCreateRequest, useUpdateRequestStatus, useProfile, useRides } from "@/hooks/useRides";
 import { useAuth } from "@/hooks/useAuth";
+import { useFavorites, useToggleFavorite } from "@/hooks/useFavorites";
+import { Star } from "lucide-react";
 
 interface RideCardProps {
   ride: {
