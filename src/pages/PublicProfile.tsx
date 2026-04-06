@@ -90,6 +90,19 @@ export default function PublicProfile() {
           <p className="text-sm text-muted-foreground">
             Block {profile.block}, Flat {profile.flat_number}
           </p>
+          {!isOwnProfile && user && (
+            <Button
+              variant={isFavorite ? "default" : "outline"}
+              size="sm"
+              className="mt-2"
+              onClick={() => userId && toggleFavMutation.mutate(userId, {
+                onSuccess: (res) => toast.success(res.action === "added" ? "Added to favorites ⭐" : "Removed from favorites"),
+              })}
+            >
+              <Star className={`w-4 h-4 mr-1 ${isFavorite ? "fill-yellow-400 text-yellow-400" : ""}`} />
+              {isFavorite ? "⭐ Preferred" : "Add to Favorites"}
+            </Button>
+          )}
         </div>
 
         {/* Stats */}
