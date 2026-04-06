@@ -125,7 +125,7 @@ export function RideCard({ ride }: RideCardProps) {
       <CardContent className="p-4 space-y-3">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <Link to={`/profile/${ride.user_id}`} className="font-semibold text-foreground hover:text-primary transition-colors underline-offset-2 hover:underline">{ride.name}</Link>
+          <Link to={`/profile/${ride.user_id}`} className="font-semibold text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">{ride.name}</Link>
           <div className="flex items-center gap-1.5">
             <Badge variant="outline" className="text-xs">{availableSeats}/{ride.seats} seats</Badge>
             <Badge variant="secondary" className="text-xs">
@@ -169,7 +169,7 @@ export function RideCard({ ride }: RideCardProps) {
               <Link
                 key={req.id}
                 to={`/profile/${req.passenger_id}`}
-                className="inline-flex items-center bg-muted px-1.5 py-0.5 rounded hover:bg-primary/10 transition-colors"
+                className="inline-flex items-center bg-primary/10 text-primary px-1.5 py-0.5 rounded underline underline-offset-2 hover:bg-primary/20 transition-colors text-xs font-medium"
               >
                 {req.passenger_name}
               </Link>
@@ -225,7 +225,7 @@ export function RideCard({ ride }: RideCardProps) {
               {requests.map((req) => (
                 <div key={req.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50 text-sm">
                   <div className="flex flex-wrap items-center gap-1">
-                    <Link to={`/profile/${req.passenger_id}`} className="font-medium text-foreground hover:text-primary transition-colors">
+                    <Link to={`/profile/${req.passenger_id}`} className="font-medium text-primary underline underline-offset-2 hover:text-primary/80 transition-colors">
                       {req.passenger_name}
                     </Link>
                     <span className="text-muted-foreground text-xs">{req.passenger_phone}</span>
