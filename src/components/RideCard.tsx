@@ -35,7 +35,10 @@ export function RideCard({ ride }: RideCardProps) {
   const { data: allRides = [] } = useRides();
   const { data: allRequests = [] } = useRequests();
   const { data: driverProfile } = useProfile(ride.user_id);
+  const { data: favorites = [] } = useFavorites();
+  const toggleFavMutation = useToggleFavorite();
   const deleteMutation = useDeleteRide();
+  const isFavoriteDriver = !isOwner && favorites.includes(ride.user_id);
   const requestMutation = useCreateRequest();
   const statusMutation = useUpdateRequestStatus();
 
