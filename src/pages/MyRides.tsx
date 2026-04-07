@@ -1,9 +1,11 @@
 import { useMemo, useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useRides, useRequests, useCompletionStats } from "@/hooks/useRides";
 import { useAuth } from "@/hooks/useAuth";
+import { useCoRiders } from "@/hooks/useCoRiders";
 import { RideCard } from "@/components/RideCard";
 import { Badge } from "@/components/ui/badge";
-import { Car, TicketCheck, Loader2, TrendingUp, UserCheck, Radio, Clock, MapPin, CalendarCheck, MessageCircle } from "lucide-react";
+import { Car, TicketCheck, Loader2, TrendingUp, UserCheck, Radio, Clock, MapPin, CalendarCheck, MessageCircle, Users, ExternalLink } from "lucide-react";
 import { getDirectionShort, isRideOngoing } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { getFrequentPatterns, FrequentPattern } from "@/lib/habitTracker";
