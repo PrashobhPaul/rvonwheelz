@@ -49,8 +49,14 @@ export default function Index() {
     ? filterDestination
     : (profile?.office_location || DEFAULT_DESTINATION);
 
+  const scoringCtx = useMemo(() => ({
+    userOfficeLocation: profile?.office_location,
+    userBlock: profile?.block,
+    favorites,
+    driverBlocks,
+  }), [profile?.office_location, profile?.block, favorites, driverBlocks]);
+
   const filtered = useMemo(() => {
-    // Extract area prefix (e.g. "HITEC City") from the selected destination
     const filterArea = filterDestination !== "all"
       ? filterDestination.split("–")[0].trim()
       : null;
@@ -64,8 +70,24 @@ export default function Index() {
         return rideArea === filterArea;
       })
       .filter((r) => getMinutesUntilRide(r as any) >= 15)
-      .sort((a, b) => a.time.localeCompare(b.time));
-  }, [rides, filterDirection, filterDate, filterDestination]);
+      .filter((r) => r.user_id !== user?.id) // don't score own rides, but keep them
+      .concat(rides.filter((r) => r.user_id === user?.id && r.direction === filterDirection && (!filterDate || r.date === filterDate) && getMinutesUntilRide(r as any) >= 15 && (filterArea ? (r.destination || "").split("–")[0].trim() === filterArea : true)))
+      .map((r) => ({ ...r, _score: r.user_id === user?.id ? -1 : scoreRide(r, scoringCtx) }))
+      .sort((a, b) => {
+        // Own rides at the end, then sort by score desc, then time asc
+        if (a._score !== b._score) return b._score - a._score;
+        return a.time.localeCompare(b.time);
+      });
+  }, [rides, filterDirection, filterDate, filterDestination, scoringCtx, user?.id]);
+
+  // Track which ride IDs are "best match"
+  const bestMatchIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const r of filtered) {
+      if ((r as any)._score >= BEST_MATCH_THRESHOLD) ids.add(r.id);
+    }
+    return ids;
+  }, [filtered]);
 
   return (
     <div className="min-h-screen bg-background pb-16">
