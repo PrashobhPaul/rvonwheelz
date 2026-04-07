@@ -28,7 +28,7 @@ interface RideCardProps {
   bestMatch?: boolean;
 }
 
-export function RideCard({ ride }: RideCardProps) {
+export function RideCard({ ride, bestMatch }: RideCardProps) {
   const [showPhone, setShowPhone] = useState(false);
   const { user } = useAuth();
 
