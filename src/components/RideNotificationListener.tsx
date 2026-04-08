@@ -5,6 +5,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getFrequentPatterns } from "@/lib/habitTracker";
+import { showCancelledAlternatives } from "@/hooks/useCancelledRide";
 
 /** Session-scoped dedup set so the same notification isn't shown twice */
 const shown = new Set<string>();
