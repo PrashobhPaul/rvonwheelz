@@ -53,6 +53,7 @@ function AppRoutes() {
   return (
     <>
       <RideNotificationListener />
+      <RideReminderScheduler />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/profile/:userId" element={<PublicProfile />} />
