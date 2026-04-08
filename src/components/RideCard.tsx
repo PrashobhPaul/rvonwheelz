@@ -4,7 +4,7 @@ import { getDirectionShort, canRejectPassenger, canCancelRequest, getMinutesUnti
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Users, Car, Phone, Trash2, ArrowRight, ArrowLeft, UserPlus, Check, X, AlertCircle } from "lucide-react";
+import { Clock, Users, Car, Phone, Trash2, ArrowRight, ArrowLeft, UserPlus, Check, X, AlertCircle, Navigation, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { useRequests, useDeleteRide, useCreateRequest, useUpdateRequestStatus, useProfile, useRides } from "@/hooks/useRides";
 import { showCancelledAlternatives } from "@/hooks/useCancelledRide";
@@ -223,6 +223,25 @@ export function RideCard({ ride, bestMatch }: RideCardProps) {
               <Phone className="w-3.5 h-3.5 mr-1" /> Contact
             </Button>
           )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs"
+            asChild
+          >
+            <a
+              href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(ride.destination || "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {isOwner ? (
+                <><Navigation className="w-3.5 h-3.5 mr-1" /> Navigate</>
+              ) : (
+                <><MapPin className="w-3.5 h-3.5 mr-1" /> Open in Maps</>
+              )}
+            </a>
+          </Button>
 
           {!isOwner && !isPast && !rideIsOngoing && availableSeats > 0 && !hasOngoingRide && (!myRequest || myRequest.status === "cancelled" || myRequest.status === "rejected") && (
             <Button variant="default" size="sm" onClick={handleRequest} disabled={requestMutation.isPending} className="text-xs">
