@@ -1,11 +1,11 @@
 import { useMemo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useRides, useRequests, useCompletionStats } from "@/hooks/useRides";
+import { useRides, useRequests, useCompletionStats, useRideHistory } from "@/hooks/useRides";
 import { useAuth } from "@/hooks/useAuth";
 import { useCoRiders } from "@/hooks/useCoRiders";
 import { RideCard } from "@/components/RideCard";
 import { Badge } from "@/components/ui/badge";
-import { Car, TicketCheck, Loader2, TrendingUp, UserCheck, Radio, Clock, MapPin, CalendarCheck, MessageCircle, Users, ExternalLink } from "lucide-react";
+import { Car, TicketCheck, Loader2, TrendingUp, UserCheck, Radio, Clock, MapPin, CalendarCheck, MessageCircle, Users, ExternalLink, History } from "lucide-react";
 import { getDirectionShort, isRideOngoing } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { getFrequentPatterns, FrequentPattern } from "@/lib/habitTracker";
@@ -22,8 +22,10 @@ export default function MyRides({ onSwitchToHome }: MyRidesProps) {
   const { data: allRequests = [], isLoading: reqLoading } = useRequests();
   const { data: completionStats } = useCompletionStats(user?.id);
   const { data: coRiders = [] } = useCoRiders();
+  const { data: rideHistory = [] } = useRideHistory(user?.id);
   const [patterns, setPatterns] = useState(getFrequentPatterns());
   const [chatRide, setChatRide] = useState<any>(null);
+  const [showAllHistory, setShowAllHistory] = useState(false);
 
   useEffect(() => {
     setPatterns(getFrequentPatterns());
@@ -313,6 +315,55 @@ export default function MyRides({ onSwitchToHome }: MyRidesProps) {
           </div>
         )}
       </section>
+
+      {/* Ride History */}
+      {rideHistory.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2">
+            <History className="w-4 h-4 text-primary" />
+            <h2 className="text-sm font-semibold text-foreground">Ride History</h2>
+            <Badge variant="secondary" className="text-xs">{rideHistory.length}</Badge>
+          </div>
+          <div className="space-y-2">
+            {(showAllHistory ? rideHistory : rideHistory.slice(0, 3)).map((entry) => (
+              <Card key={entry.id}>
+                <CardContent className="p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="rounded-full bg-primary/10 p-1.5 shrink-0">
+                      {entry.role === "driver" ? (
+                        <Car className="w-4 h-4 text-primary" />
+                      ) : (
+                        <TicketCheck className="w-4 h-4 text-primary" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">
+                        📍 {entry.destination || "Unknown"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {entry.ride_date} · {entry.direction || "—"}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-xs shrink-0">
+                    {entry.role === "driver" ? "🚗 Driver" : "🧑‍🤝‍🧑 Rider"}
+                  </Badge>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {rideHistory.length > 3 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full text-xs"
+              onClick={() => setShowAllHistory(!showAllHistory)}
+            >
+              {showAllHistory ? "Show Less" : `View All History (${rideHistory.length})`}
+            </Button>
+          )}
+        </section>
+      )}
 
       {/* Chat Overlay */}
       {chatRide && (
