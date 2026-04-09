@@ -41,6 +41,12 @@ export function OfferRideForm({ onClose }: OfferRideFormProps) {
   });
 
   useEffect(() => {
+    if (profile?.office_location) {
+      setDestination(profile.office_location);
+    }
+  }, [profile?.office_location]);
+
+  useEffect(() => {
     if (profile?.vehicle_name && !vehicle) {
       setVehicle(profile.vehicle_name);
     }
