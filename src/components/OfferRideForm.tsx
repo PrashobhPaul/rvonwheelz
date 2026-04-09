@@ -19,7 +19,7 @@ interface OfferRideFormProps {
 export function OfferRideForm({ onClose }: OfferRideFormProps) {
   const { user, profile } = useAuth();
   const [direction, setDirection] = useState<Ride["direction"]>("to-office");
-  const [destination, setDestination] = useState(DEFAULT_DESTINATION);
+  const [destination, setDestination] = useState(profile?.office_location || DEFAULT_DESTINATION);
   const [date, setDate] = useState(getLocalToday());
   const [time, setTime] = useState("08:30");
   const [vehicleType, setVehicleType] = useState<"car" | "bike">("car");
@@ -39,6 +39,12 @@ export function OfferRideForm({ onClose }: OfferRideFormProps) {
       (req) => req.ride_id === r.id && req.passenger_id === user?.id && req.status === "approved"
     );
   });
+
+  useEffect(() => {
+    if (profile?.office_location) {
+      setDestination(profile.office_location);
+    }
+  }, [profile?.office_location]);
 
   useEffect(() => {
     if (profile?.vehicle_name && !vehicle) {
@@ -123,7 +129,7 @@ export function OfferRideForm({ onClose }: OfferRideFormProps) {
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="seats">Seats</Label>
-              <Input id="seats" type="number" min={1} max={vehicleType === "car" ? 6 : 2} value={seats} onChange={(e) => setSeats(Number(e.target.value))} required />
+              <Input id="seats" type="number" min={1} max={vehicleType === "car" ? 6 : 2} value={seats} onChange={(e) => setSeats(Number(e.target.value))} required disabled={vehicleType === "bike"} />
             </div>
           </div>
           <div className="space-y-1.5">

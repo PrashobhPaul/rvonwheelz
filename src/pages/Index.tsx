@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
-import { Ride, DESTINATIONS, DEFAULT_DESTINATION, getLocalToday, getMinutesUntilRide } from "@/lib/types";
+import { Ride, DESTINATIONS, DEFAULT_DESTINATION, getLocalToday, getMinutesUntilRide, isRideOngoing } from "@/lib/types";
 import { DirectionToggle } from "@/components/DirectionToggle";
 import { OfferRideForm } from "@/components/OfferRideForm";
 import { RideCard } from "@/components/RideCard";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, LogOut, Loader2, Home, CarFront, Settings, Moon, Sun } from "lucide-react";
-import { useRides, useDriverBlocks } from "@/hooks/useRides";
+import { useRides, useDriverBlocks, useRequests } from "@/hooks/useRides";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavorites } from "@/hooks/useFavorites";
 import { scoreRide, BEST_MATCH_THRESHOLD } from "@/lib/rideScoring";
@@ -20,6 +20,7 @@ import { useCancelledRide } from "@/hooks/useCancelledRide";
 
 export default function Index() {
   const { data: rides = [], isLoading } = useRides();
+  const { data: allRequests = [] } = useRequests();
   const { profile, signOut, user } = useAuth();
   const { theme, setTheme } = useTheme();
   const { data: favorites = [] } = useFavorites();
@@ -41,6 +42,17 @@ export default function Index() {
       setFilterDestination(profile.office_location);
     }
   }, [profile?.office_location]);
+
+  // Detect if user has an ongoing ride (as driver or approved passenger)
+  const hasOngoingRide = useMemo(() => {
+    return rides.some((r) => {
+      if (!isRideOngoing(r)) return false;
+      if (r.user_id === user?.id) return true;
+      return allRequests.some(
+        (req) => req.ride_id === r.id && req.passenger_id === user?.id && req.status === "approved"
+      );
+    });
+  }, [rides, allRequests, user?.id]);
 
   const handleDestinationChange = (value: string) => {
     userChangedDestination.current = true;
@@ -146,13 +158,24 @@ export default function Index() {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="pl-9 text-sm" />
                 </div>
-                <Button onClick={() => setShowForm(!showForm)} className="shrink-0">
+                <Button
+                  onClick={() => setShowForm(!showForm)}
+                  className="shrink-0"
+                  disabled={hasOngoingRide}
+                  title={hasOngoingRide ? "You have an ongoing ride" : undefined}
+                >
                   <Plus className="w-4 h-4 mr-1" /> Offer Ride
                 </Button>
               </div>
             </div>
 
-            {showForm && <OfferRideForm onClose={() => setShowForm(false)} />}
+            {hasOngoingRide && (
+              <p className="text-xs text-destructive font-medium flex items-center gap-1">
+                ⚠️ You have an ongoing ride. Offering new rides is disabled until it ends.
+              </p>
+            )}
+
+            {showForm && !hasOngoingRide && <OfferRideForm onClose={() => setShowForm(false)} />}
 
             <div className="space-y-3">
               {isLoading ? (

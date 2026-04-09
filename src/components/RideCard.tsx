@@ -263,7 +263,14 @@ export function RideCard({ ride, bestMatch }: RideCardProps) {
           )}
 
           {isOwner && (
-            <Button variant="ghost" size="sm" onClick={handleDelete} disabled={deleteMutation.isPending} className="text-xs text-muted-foreground ml-auto">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending || rideIsOngoing}
+              title={rideIsOngoing ? "You have an ongoing ride" : undefined}
+              className="text-xs text-muted-foreground ml-auto"
+            >
               <Trash2 className="w-3.5 h-3.5" />
             </Button>
           )}
