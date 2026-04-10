@@ -32,7 +32,7 @@ interface RideCardProps {
 
 export function RideCard({ ride, bestMatch }: RideCardProps) {
   const [showPhone, setShowPhone] = useState(false);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const { data: requests = [] } = useRequests(ride.id);
   const { data: allRides = [] } = useRides();
