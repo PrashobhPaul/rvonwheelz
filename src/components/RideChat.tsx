@@ -103,6 +103,16 @@ export function RideChat({ ride, onClose }: RideChatProps) {
         ) : (
           messages.map((msg) => {
             const isMe = msg.user_id === user?.id;
+            const isSystem = msg.user_name === "System";
+            if (isSystem) {
+              return (
+                <div key={msg.id} className="flex justify-center">
+                  <p className="text-xs text-muted-foreground bg-muted/50 px-3 py-1 rounded-full">
+                    {msg.message}
+                  </p>
+                </div>
+              );
+            }
             return (
               <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
                 <div className={`max-w-[75%] rounded-2xl px-3 py-2 ${
