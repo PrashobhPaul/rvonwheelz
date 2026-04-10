@@ -101,6 +101,19 @@ export function RideCard({ ride, bestMatch }: RideCardProps) {
     });
   };
 
+  const postSystemMessage = async (rideId: string, message: string) => {
+    if (!user) return;
+    try {
+      await supabase.from("ride_messages").insert({
+        ride_id: rideId,
+        user_id: user.id,
+        user_name: "System",
+        message,
+        is_quick_action: true,
+      });
+    } catch {}
+  };
+
   const handleApprove = (reqId: string, name: string) => {
     const rideDateTime = new Date(`${ride.date}T${ride.time}`);
     if (new Date() > rideDateTime) {
@@ -108,7 +121,10 @@ export function RideCard({ ride, bestMatch }: RideCardProps) {
       return;
     }
     statusMutation.mutate({ id: reqId, status: "approved" }, {
-      onSuccess: () => toast.success(`${name} approved`),
+      onSuccess: () => {
+        toast.success(`${name} approved`);
+        postSystemMessage(ride.id, `✅ ${name} joined the ride`);
+      },
     });
   };
 
@@ -123,13 +139,16 @@ export function RideCard({ ride, bestMatch }: RideCardProps) {
   };
 
   const handleCancelMyRequest = () => {
-    if (!myRequest) return;
+    if (!myRequest || !profile) return;
     if (!canCancelRequest(rideForTime)) {
       toast.error("Cannot cancel within 15 minutes of ride start");
       return;
     }
     statusMutation.mutate({ id: myRequest.id, status: "cancelled" }, {
-      onSuccess: () => toast.success("Request cancelled"),
+      onSuccess: () => {
+        toast.success("Request cancelled");
+        postSystemMessage(ride.id, `❌ ${profile.name} left the ride`);
+      },
     });
   };
 
