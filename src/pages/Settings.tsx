@@ -1,31 +1,22 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Save, Plus, Trash2, Clock, ArrowRight, Car, Bike } from "lucide-react";
+import { Loader2, Save, Plus, Trash2, Clock, ArrowRight, Car, Bike, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { getFrequentPatterns, FrequentPattern, recordHabit, deletePattern } from "@/lib/habitTracker";
 import { HOME_LOCATION, DESTINATIONS, DEFAULT_DESTINATION } from "@/lib/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { UserAvatar } from "@/components/UserAvatar";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 function formatTime12h(time24: string): string {
   const [h, m] = time24.split(":").map(Number);
@@ -35,6 +26,8 @@ function formatTime12h(time24: string): string {
 }
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+
+const LANGUAGE_OPTIONS = ["English", "Telugu", "Malayalam", "Tamil", "Kannada", "Hindi"] as const;
 
 function AddRoutineDialog({ onAdd, open, onOpenChange }: { onAdd: () => void; open: boolean; onOpenChange: (v: boolean) => void }) {
   const [destination, setDestination] = useState(DEFAULT_DESTINATION);
@@ -50,10 +43,7 @@ function AddRoutineDialog({ onAdd, open, onOpenChange }: { onAdd: () => void; op
   };
 
   const handleSave = () => {
-    if (!destination) {
-      toast.error("Please select a destination");
-      return;
-    }
+    if (!destination) { toast.error("Please select a destination"); return; }
     const from = direction === "to-office" ? HOME_LOCATION : destination;
     const today = new Date().toISOString().slice(0, 10);
     recordHabit({ time, direction, destination, from, action, date: today, days: selectedDays });
@@ -69,19 +59,13 @@ function AddRoutineDialog({ onAdd, open, onOpenChange }: { onAdd: () => void; op
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Add Commute Routine</DialogTitle>
-        </DialogHeader>
+        <DialogHeader><DialogTitle>Add Commute Routine</DialogTitle></DialogHeader>
         <div className="space-y-4 pt-2">
           <div className="space-y-1.5">
             <Label>Destination</Label>
             <Select value={destination} onValueChange={setDestination}>
               <SelectTrigger><SelectValue placeholder="Select destination" /></SelectTrigger>
-              <SelectContent>
-                {DESTINATIONS.map((dest) => (
-                  <SelectItem key={dest} value={dest}>{dest}</SelectItem>
-                ))}
-              </SelectContent>
+              <SelectContent>{DESTINATIONS.map((dest) => (<SelectItem key={dest} value={dest}>{dest}</SelectItem>))}</SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
@@ -112,28 +96,16 @@ function AddRoutineDialog({ onAdd, open, onOpenChange }: { onAdd: () => void; op
             <Label>Days <span className="text-muted-foreground text-xs">(optional)</span></Label>
             <div className="flex flex-wrap gap-1.5">
               {WEEKDAYS.map((day) => (
-                <button
-                  key={day}
-                  type="button"
-                  onClick={() => toggleDay(day)}
+                <button key={day} type="button" onClick={() => toggleDay(day)}
                   className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    selectedDays.includes(day)
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-muted text-muted-foreground border-border hover:bg-accent"
-                  }`}
-                >
-                  {day}
-                </button>
+                    selectedDays.includes(day) ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:bg-accent"
+                  }`}>{day}</button>
               ))}
             </div>
           </div>
           <div className="flex gap-2 pt-1">
-            <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} className="flex-1">
-              Save Routine
-            </Button>
+            <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button onClick={handleSave} className="flex-1">Save Routine</Button>
           </div>
         </div>
       </DialogContent>
@@ -142,8 +114,9 @@ function AddRoutineDialog({ onAdd, open, onOpenChange }: { onAdd: () => void; op
 }
 
 export default function Settings() {
-  const { profile, updateProfile, loading: authLoading } = useAuth();
+  const { user, profile, updateProfile, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [name, setName] = useState("");
   const [block, setBlock] = useState("");
   const [flatNumber, setFlatNumber] = useState("");
@@ -153,12 +126,17 @@ export default function Settings() {
   const [officeLocation, setOfficeLocation] = useState(DEFAULT_DESTINATION);
   const [carName, setCarName] = useState("");
   const [carRegistration, setCarRegistration] = useState("");
+  const [carColor, setCarColor] = useState("");
   const [bikeName, setBikeName] = useState("");
   const [bikeRegistration, setBikeRegistration] = useState("");
+  const [bikeColor, setBikeColor] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [languages, setLanguages] = useState<string[]>([]);
   const [patterns, setPatterns] = useState<FrequentPattern[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [confirmClearAll, setConfirmClearAll] = useState(false);
   const [confirmDeleteIndex, setConfirmDeleteIndex] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile) {
@@ -171,18 +149,49 @@ export default function Settings() {
       setOfficeLocation(profile.office_location || DEFAULT_DESTINATION);
       setCarName(profile.car_name || "");
       setCarRegistration(profile.car_registration || "");
+      setCarColor(profile.car_color || "");
       setBikeName(profile.bike_name || "");
       setBikeRegistration(profile.bike_registration || "");
+      setBikeColor(profile.bike_color || "");
+      setAvatarUrl(profile.avatar_url || "");
+      setLanguages(profile.languages || []);
     }
   }, [profile]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (!file.type.startsWith("image/")) { toast.error("Please select an image file"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("Image must be under 2MB"); return; }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/avatar.${ext}`;
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
+      const urlWithCacheBust = `${publicUrl}?t=${Date.now()}`;
+      setAvatarUrl(urlWithCacheBust);
+      // Save immediately
+      await supabase.from("profiles").update({ avatar_url: urlWithCacheBust }).eq("user_id", user.id);
+      toast.success("Photo updated!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload photo");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const toggleLanguage = (lang: string) => {
+    setLanguages((prev) => prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !block.trim() || !flatNumber.trim() || phone.trim().length < 10) {
-      toast.error("Please fill all fields with valid data");
-      return;
+      toast.error("Please fill all fields with valid data"); return;
     }
-
     setLoading(true);
     try {
       await updateProfile({
@@ -195,8 +204,12 @@ export default function Settings() {
         office_location: officeLocation,
         car_name: carName.trim(),
         car_registration: carRegistration.trim().toUpperCase(),
+        car_color: carColor.trim(),
         bike_name: bikeName.trim(),
         bike_registration: bikeRegistration.trim().toUpperCase(),
+        bike_color: bikeColor.trim(),
+        avatar_url: avatarUrl,
+        languages,
       });
       toast.success("Profile updated!");
     } catch (err: any) {
@@ -206,13 +219,8 @@ export default function Settings() {
     }
   };
 
-  const refreshPatterns = useCallback(() => {
-    setPatterns(getFrequentPatterns());
-  }, []);
-
-  useEffect(() => {
-    refreshPatterns();
-  }, [refreshPatterns]);
+  const refreshPatterns = useCallback(() => { setPatterns(getFrequentPatterns()); }, []);
+  useEffect(() => { refreshPatterns(); }, [refreshPatterns]);
 
   const handleClearHabits = () => {
     localStorage.removeItem("ride_habits");
@@ -237,8 +245,7 @@ export default function Settings() {
           <CardDescription>Loading your saved details...</CardDescription>
         </CardHeader>
         <CardContent className="flex items-center justify-center py-10 text-muted-foreground">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Loading profile...
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading profile...
         </CardContent>
       </Card>
     );
@@ -253,6 +260,23 @@ export default function Settings() {
           <CardDescription>Update your personal details</CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Avatar Section */}
+          <div className="flex flex-col items-center gap-3 pb-5 border-b mb-5">
+            <div className="relative">
+              <UserAvatar name={name} avatarUrl={avatarUrl} size="xl" />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="absolute bottom-0 right-0 rounded-full bg-primary text-primary-foreground p-1.5 shadow-md hover:bg-primary/90 transition-colors"
+              >
+                {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
+            </div>
+            <p className="text-xs text-muted-foreground">Tap the camera icon to upload a photo</p>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="s-name">Full Name</Label>
@@ -276,15 +300,24 @@ export default function Settings() {
               <Label>Office Location</Label>
               <Select value={officeLocation} onValueChange={setOfficeLocation}>
                 <SelectTrigger><SelectValue placeholder="Select your office location" /></SelectTrigger>
-                <SelectContent>
-                  {DESTINATIONS.map((dest) => (
-                    <SelectItem key={dest} value={dest}>{dest}</SelectItem>
-                  ))}
-                </SelectContent>
+                <SelectContent>{DESTINATIONS.map((dest) => (<SelectItem key={dest} value={dest}>{dest}</SelectItem>))}</SelectContent>
               </Select>
             </div>
 
-            {/* Car Details Section */}
+            {/* Languages */}
+            <div className="space-y-1.5">
+              <Label>Languages Known</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {LANGUAGE_OPTIONS.map((lang) => (
+                  <button key={lang} type="button" onClick={() => toggleLanguage(lang)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                      languages.includes(lang) ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border hover:bg-accent"
+                    }`}>{lang}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Car Details */}
             <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Car className="w-4 h-4 text-primary" />
@@ -296,13 +329,17 @@ export default function Settings() {
                   <Input id="s-car-name" value={carName} onChange={(e) => setCarName(e.target.value)} placeholder="e.g. Ford Ecosport" maxLength={50} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="s-car-reg">Registration No.</Label>
-                  <Input id="s-car-reg" value={carRegistration} onChange={(e) => setCarRegistration(e.target.value.toUpperCase())} placeholder="e.g. TS08FZ1868" maxLength={15} />
+                  <Label htmlFor="s-car-color">Color</Label>
+                  <Input id="s-car-color" value={carColor} onChange={(e) => setCarColor(e.target.value)} placeholder="e.g. White" maxLength={20} />
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="s-car-reg">Registration No.</Label>
+                <Input id="s-car-reg" value={carRegistration} onChange={(e) => setCarRegistration(e.target.value.toUpperCase())} placeholder="e.g. TS08FZ1868" maxLength={15} />
               </div>
             </div>
 
-            {/* Bike Details Section */}
+            {/* Bike Details */}
             <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
               <div className="flex items-center gap-2 text-sm font-medium">
                 <Bike className="w-4 h-4 text-primary" />
@@ -314,9 +351,13 @@ export default function Settings() {
                   <Input id="s-bike-name" value={bikeName} onChange={(e) => setBikeName(e.target.value)} placeholder="e.g. Apache RTR" maxLength={50} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="s-bike-reg">Registration No.</Label>
-                  <Input id="s-bike-reg" value={bikeRegistration} onChange={(e) => setBikeRegistration(e.target.value.toUpperCase())} placeholder="e.g. TS09EA1234" maxLength={15} />
+                  <Label htmlFor="s-bike-color">Color</Label>
+                  <Input id="s-bike-color" value={bikeColor} onChange={(e) => setBikeColor(e.target.value)} placeholder="e.g. Black" maxLength={20} />
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="s-bike-reg">Registration No.</Label>
+                <Input id="s-bike-reg" value={bikeRegistration} onChange={(e) => setBikeRegistration(e.target.value.toUpperCase())} placeholder="e.g. TS09EA1234" maxLength={15} />
               </div>
             </div>
 
@@ -344,87 +385,50 @@ export default function Settings() {
               {patterns.map((p, i) => {
                 const route = { from: p.from, to: p.to };
                 return (
-                  <div
-                    key={`${p.time}-${p.direction}-${p.action}-${i}`}
-                    className="rounded-lg border bg-muted/50 p-3 space-y-1.5"
-                  >
+                  <div key={`${p.time}-${p.direction}-${p.action}-${i}`} className="rounded-lg border bg-muted/50 p-3 space-y-1.5">
                     <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
                       <span className="truncate">{route.from}</span>
                       <ArrowRight className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
                       <span className="truncate">{route.to}</span>
-                      <button
-                        onClick={() => setConfirmDeleteIndex(i)}
-                        className="ml-auto shrink-0 p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                        aria-label="Delete routine"
-                      >
+                      <button onClick={() => setConfirmDeleteIndex(i)} className="ml-auto shrink-0 p-1 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" aria-label="Delete routine">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        {formatTime12h(p.time)}
-                      </div>
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        {p.direction === "to-office" ? "Going" : "Returning"}
-                      </Badge>
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                        {p.action === "offered" ? "Offer" : "Book"}
-                      </Badge>
-                      <span className="text-[10px] text-muted-foreground ml-auto">
-                        {p.frequency} times
-                      </span>
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="w-3 h-3" />{formatTime12h(p.time)}</div>
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{p.direction === "to-office" ? "Going" : "Returning"}</Badge>
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">{p.action === "offered" ? "Offer" : "Book"}</Badge>
+                      <span className="text-[10px] text-muted-foreground ml-auto">{p.frequency} times</span>
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
-
           <div className="flex gap-2 pt-1">
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={() => setShowAddDialog(true)}
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Add Routine
+            <Button variant="outline" size="sm" className="flex-1" onClick={() => setShowAddDialog(true)}>
+              <Plus className="w-4 h-4 mr-1" /> Add Routine
             </Button>
             {patterns.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-destructive hover:text-destructive"
-                onClick={() => setConfirmClearAll(true)}
-              >
-                <Trash2 className="w-4 h-4 mr-1" />
-                Clear All
+              <Button variant="outline" size="sm" className="text-destructive hover:text-destructive" onClick={() => setConfirmClearAll(true)}>
+                <Trash2 className="w-4 h-4 mr-1" /> Clear All
               </Button>
             )}
           </div>
         </CardContent>
       </Card>
 
-      <AddRoutineDialog
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
-        onAdd={refreshPatterns}
-      />
+      <AddRoutineDialog open={showAddDialog} onOpenChange={setShowAddDialog} onAdd={refreshPatterns} />
 
       <AlertDialog open={confirmClearAll} onOpenChange={setConfirmClearAll}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Clear all habits?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete all your saved commute routines. This action cannot be undone.
-            </AlertDialogDescription>
+            <AlertDialogDescription>This will permanently delete all your saved commute routines. This action cannot be undone.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleClearHabits} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Clear All
-            </AlertDialogAction>
+            <AlertDialogAction onClick={handleClearHabits} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Clear All</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -433,15 +437,11 @@ export default function Settings() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this routine?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This routine will be permanently removed from your habits.
-            </AlertDialogDescription>
+            <AlertDialogDescription>This routine will be permanently removed from your habits.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => confirmDeleteIndex !== null && handleDeleteSingle(confirmDeleteIndex)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
+            <AlertDialogAction onClick={() => confirmDeleteIndex !== null && handleDeleteSingle(confirmDeleteIndex)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
