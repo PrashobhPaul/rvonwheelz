@@ -16,14 +16,18 @@ export type Database = {
     Tables: {
       profiles: {
         Row: {
+          avatar_url: string
+          bike_color: string
           bike_name: string
           bike_registration: string
           block: string
+          car_color: string
           car_name: string
           car_registration: string
           created_at: string
           flat_number: string
           id: string
+          languages: string[]
           name: string
           office_location: string
           phone: string
@@ -32,14 +36,18 @@ export type Database = {
           vehicle_name: string
         }
         Insert: {
+          avatar_url?: string
+          bike_color?: string
           bike_name?: string
           bike_registration?: string
           block: string
+          car_color?: string
           car_name?: string
           car_registration?: string
           created_at?: string
           flat_number: string
           id?: string
+          languages?: string[]
           name: string
           office_location?: string
           phone: string
@@ -48,14 +56,18 @@ export type Database = {
           vehicle_name?: string
         }
         Update: {
+          avatar_url?: string
+          bike_color?: string
           bike_name?: string
           bike_registration?: string
           block?: string
+          car_color?: string
           car_name?: string
           car_registration?: string
           created_at?: string
           flat_number?: string
           id?: string
+          languages?: string[]
           name?: string
           office_location?: string
           phone?: string
