@@ -60,7 +60,7 @@ export const DESTINATIONS = [
   "KPHB – Main Circle Junction",
 ] as const;
 
-export const DEFAULT_DESTINATION = "Nanakramguda – Sattva Knowledge City Main Gate";
+export const DEFAULT_DESTINATION = "HITECH City – Knowledge City Main Gate";
 
 // Keep backward compat
 export const LOCATIONS = {
