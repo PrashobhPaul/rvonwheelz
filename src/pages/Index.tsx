@@ -6,9 +6,8 @@ import { OfferRideForm } from "@/components/OfferRideForm";
 import { RideCard } from "@/components/RideCard";
 import { SmartRideBanner } from "@/components/SmartRideBanner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, LogOut, Loader2, Home, CarFront, Settings, Moon, Sun } from "lucide-react";
+import { Plus, LogOut, Loader2, Home, CarFront, Settings, Moon, Sun } from "lucide-react";
 import { useRides, useDriverBlocks, useRequests } from "@/hooks/useRides";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -17,6 +16,7 @@ import MyRides from "@/pages/MyRides";
 import SettingsPage from "@/pages/Settings";
 import { RideCancelledSuggestions } from "@/components/RideCancelledSuggestions";
 import { useCancelledRide } from "@/hooks/useCancelledRide";
+import { RideFilters, usePersistedFilters, getDateValue, type DateFilter, type VehicleFilter } from "@/components/RideFilters";
 
 export default function Index() {
   const { data: rides = [], isLoading } = useRides();
@@ -24,9 +24,13 @@ export default function Index() {
   const { profile, signOut, user } = useAuth();
   const { theme, setTheme } = useTheme();
   const { data: favorites = [] } = useFavorites();
+
+  const persisted = usePersistedFilters(profile?.office_location);
+
   const [filterDirection, setFilterDirection] = useState<Ride["direction"]>("to-office");
-  const [filterDestination, setFilterDestination] = useState<string>("all");
-  const [filterDate, setFilterDate] = useState(getLocalToday());
+  const [filterDestination, setFilterDestination] = useState<string>(persisted.initialDestination);
+  const [dateFilter, setDateFilter] = useState<DateFilter>("today");
+  const [vehicleFilter, setVehicleFilter] = useState<VehicleFilter>(persisted.initialVehicle);
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState<"home" | "my-rides" | "settings">("home");
   const { cancelledRide, dismiss: dismissCancelled } = useCancelledRide();
@@ -42,6 +46,11 @@ export default function Index() {
       setFilterDestination(profile.office_location);
     }
   }, [profile?.office_location]);
+
+  // Persist filters on change
+  useEffect(() => {
+    persisted.persist(filterDestination, vehicleFilter);
+  }, [filterDestination, vehicleFilter]);
 
   // Detect if user has an ongoing ride (as driver or approved passenger)
   const hasOngoingRide = useMemo(() => {
@@ -71,6 +80,9 @@ export default function Index() {
     driverBlocks,
   }), [profile?.office_location, profile?.block, favorites, driverBlocks]);
 
+  const filterDateValue = getDateValue(dateFilter);
+  const isToday = dateFilter === "today";
+
   const filtered = useMemo(() => {
     const filterArea = filterDestination !== "all"
       ? filterDestination.split("–")[0].trim()
@@ -78,19 +90,30 @@ export default function Index() {
 
     return rides
       .filter((r) => r.direction === filterDirection)
-      .filter((r) => !filterDate || r.date === filterDate)
+      .filter((r) => r.date === filterDateValue)
       .filter((r) => {
         if (!filterArea) return true;
         const rideArea = (r.destination || "").split("–")[0].trim();
         return rideArea === filterArea;
       })
-      .filter((r) => getMinutesUntilRide(r as any) >= 15)
+      .filter((r) => {
+        if (vehicleFilter === "any") return true;
+        const v = (r.vehicle || "").toLowerCase();
+        if (vehicleFilter === "car") return !v.includes("bike") && !v.includes("scooter") && !v.includes("motorcycle") && !v.includes("apache") && !v.includes("pulsar") && !v.includes("bullet") && !v.includes("ktm") && !v.includes("yamaha") && !v.includes("honda cb") && !v.includes("duke") && !v.includes("dominar");
+        // bike filter — match common bike keywords or seats === 1
+        return v.includes("bike") || v.includes("scooter") || v.includes("motorcycle") || (r as any).seats === 1;
+      })
+      .filter((r) => {
+        // For today: >=16 min away; for future dates: show all
+        if (isToday) return getMinutesUntilRide(r as any) >= 16;
+        return true;
+      })
       .map((r) => ({ ...r, _score: r.user_id === user?.id ? -1 : scoreRide(r, scoringCtx) }))
       .sort((a, b) => {
         if (a._score !== b._score) return b._score - a._score;
         return a.time.localeCompare(b.time);
       });
-  }, [rides, filterDirection, filterDate, filterDestination, scoringCtx, user?.id]);
+  }, [rides, filterDirection, filterDateValue, filterDestination, vehicleFilter, isToday, scoringCtx, user?.id]);
 
   // Track which ride IDs are "best match"
   const bestMatchIds = useMemo(() => {
