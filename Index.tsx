@@ -6,51 +6,59 @@ import { OfferRideForm } from "@/components/OfferRideForm";
 import { RideCard } from "@/components/RideCard";
 import { SmartRideBanner } from "@/components/SmartRideBanner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, LogOut, Loader2, Home, CarFront, Settings, Moon, Sun } from "lucide-react";
+import { Plus, LogOut, Loader2, Home, CarFront, Settings, Moon, Sun } from "lucide-react";
 import { useRides } from "@/hooks/useRides";
 import { useAuth } from "@/hooks/useAuth";
 import MyRides from "@/pages/MyRides";
 import SettingsPage from "@/pages/Settings";
+import { RideFilters, usePersistedFilters, getDateValue, type DateFilter, type VehicleFilter } from "@/components/RideFilters";
 
 export default function Index() {
   const { data: rides = [], isLoading } = useRides();
   const { profile, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
+
+  const persisted = usePersistedFilters(profile?.office_location);
+
   const [filterDirection, setFilterDirection] = useState<Ride["direction"]>("to-office");
-  const [filterDestination, setFilterDestination] = useState<string>("all");
-  const [filterDate, setFilterDate] = useState(getLocalToday());
+  const [filterDestination, setFilterDestination] = useState<string>(persisted.initialDestination);
+  const [dateFilter, setDateFilter] = useState<DateFilter>("today");
+  const [vehicleFilter, setVehicleFilter] = useState<VehicleFilter>(persisted.initialVehicle);
   const [showForm, setShowForm] = useState(false);
   const [activeTab, setActiveTab] = useState<"home" | "my-rides" | "settings">("home");
 
-  // Track whether the user has manually changed the destination filter
   const userChangedDestination = useRef(false);
 
-  // Auto-select destination from profile's office_location (only once, before user interaction)
   useEffect(() => {
-    if (
-      profile?.office_location &&
-      !userChangedDestination.current
-    ) {
+    if (profile?.office_location && !userChangedDestination.current) {
       setFilterDestination(profile.office_location);
     }
   }, [profile?.office_location]);
 
-  // Wrapper that marks manual change
+  useEffect(() => {
+    persisted.persist(filterDestination, vehicleFilter);
+  }, [filterDestination, vehicleFilter]);
+
   const handleDestinationChange = (value: string) => {
     userChangedDestination.current = true;
     setFilterDestination(value);
   };
 
+  const filterDateValue = getDateValue(dateFilter);
+  const isToday = dateFilter === "today";
+
   const filtered = useMemo(() => {
     return rides
       .filter((r) => r.direction === filterDirection)
-      .filter((r) => !filterDate || r.date === filterDate)
+      .filter((r) => r.date === filterDateValue)
       .filter((r) => filterDestination === "all" || r.destination === filterDestination)
-      .filter((r) => getMinutesUntilRide(r as any) >= 15)
+      .filter((r) => {
+        if (isToday) return getMinutesUntilRide(r as any) >= 16;
+        return true;
+      })
       .sort((a, b) => a.time.localeCompare(b.time));
-  }, [rides, filterDirection, filterDate, filterDestination]);
+  }, [rides, filterDirection, filterDateValue, filterDestination, isToday]);
 
   return (
     <div className="min-h-screen bg-background pb-16">
@@ -104,11 +112,14 @@ export default function Index() {
                 </Select>
               </div>
 
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="pl-9 text-sm" />
-                </div>
+              <RideFilters
+                dateFilter={dateFilter}
+                onDateChange={setDateFilter}
+                vehicleFilter={vehicleFilter}
+                onVehicleChange={setVehicleFilter}
+              />
+
+              <div className="flex justify-end">
                 <Button onClick={() => setShowForm(!showForm)} className="shrink-0">
                   <Plus className="w-4 h-4 mr-1" /> Offer Ride
                 </Button>
